@@ -1,0 +1,255 @@
+
+2 SQL Queries
+2.1 SELECT
+•	Task – Select all records from the Employee table.
+select * from employees;
+
+•	Task – Select all records from the Employee table where last name is King.
+select * from employees
+where last_name ='King'
+;
+•	Task – Select all records from the Employee table where first name is Andrew and REPORTSTO is NULL.
+select * from employees
+where first_name ='Andrew'
+and reports_to is null
+;
+2.2 ORDER BY
+•	Task – Select all albums in Album table and sort result set in descending order by title.
+select * from albums
+order by title desc
+;
+•	Task – Select first name from Customer and sort result set in ascending order by city
+select * from customers
+order by city asc
+;
+2.3 INSERT INTO
+•	Task – Insert two new records into Genre table
+insert into genres
+(id, name) values (26, 'Bulgarian')
+;
+•	Task – Insert two new records into Employee table
+insert into employees (id, last_name, first_name, title, reports_to, 
+                       birth_date, hire_date, address, city, state,
+                       country, postal_code, phone, fax, email)
+values (9, 'Howell', 'Aleksandra', 'DA',1, '1900-01-01 00:00:00', 
+        '2006-01-01', '11 My Street', 'Calgary', 'AS', 'Canada', 
+        'T2P 5M5', '+1 (403) 123-4567', '+1 (403) 123-4567' , 'aleks@chinookcorp.com')
+;
+
+insert into employees (id, last_name, first_name, title, reports_to, 
+                       birth_date, hire_date, address, city, state,
+                       country, postal_code, phone, fax, email)
+values (10, 'Ivanova', 'Irena', 'DA',1, '1900-02-01 00:00:00', 
+        '2006-02-01', '11 My Street', 'Calgary', 'AS', 'Canada', 
+        'T2P 5M5', '+1 (403) 234-4567', '+1 (403) 345-4567' , 'irena@chinookcorp.com')
+;
+
+
+•	Task – Insert two new records into Customer table
+insert into customers (id, first_name, last_name, company, address, city,
+                       state, country, postal_code, phone, fax, email, support_rep_id)
+
+values
+  (60, 'Gloria', 'White', 'Apple Inc.', '1111 Main Street', 'Rome', 'RM', 'Italy',
+       '00192', '+39 06 39733434', '', 'gloria@yahoo.com', 5)
+2.4 UPDATE
+•	Task – Update Aaron Mitchell in Customer table to Robert Walter
+
+update customers
+set first_name='Robert' ,
+  last_name='Walter'
+where first_name='Aaron'
+      and last_name='Mitchell'
+;
+
+•	Task – Update name of artist in the Artist table “Creedence Clearwater Revival” to “CCR”
+update artists 
+set name='CCR'
+where name='Creedence Clearwater Revival'
+;
+2.5 LIKE
+•	Task – Select all invoices with a billing address like “T%”
+select * from invoices where billing_address like 'T%';
+2.6 BETWEEN
+•	Task – Select all invoices that have a total between 15 and 50
+select * from invoices where total between 15 and 50;
+•	Task – Select all employees hired between 1st of June 2003 and 1st of March 2004
+select * from employees where hire_date between '2003-06-01' and '2004-03-01';
+2.7 DELETE
+•	Task – Delete a record in Customer table where the name is Robert Walter (There may be constraints that rely on this, find out how to resolve them).
+
+
+Select id from customers where first_name=’Robert’ and last_name=’Walter’; -- result --32
+delete from invoice_lines                 
+where invoice_id in ( select id from invoices where customer_id=32)
+;
+delete from invoices where customer_id=32;
+delete from customers where id=32;
+
+
+3 SQL Functions
+3.1 System Defined Functions
+•	Task – Create a function that returns the current time.
+select now();
+•	Task – create a function that returns the length of a mediatype from the mediatype table
+select name,  length(name) as media_legth from media_types;
+3.2 System Defined Aggregate Functions
+•	Task – Create a function that returns the average total of all invoices
+select sum(total)as total_sum, count(*) as total_count, (sum(total)/ count(*))as average                                                                        from invoices;
+•	Task – Create a function that returns the most expensive track
+select max(unit_price) from tracks;
+3.3 User Defined Scalar Functions
+•	Task – Create a function that returns the average price of invoiceline items in the invoiceline table
+create or replace function average_price()
+  returns numeric(10,2) as
+$$
+select avg(total) from invoices;
+$$
+
+language sql;
+
+select average_price();
+3.4 User Defined Table Valued Functions
+•	Task – Create a function that returns all employees who are born after 1968.
+create or replace function born_after_1968()
+  returns TABLE
+  (
+  id INTEGER,
+  last_name varchar(20),
+  first_name VARCHAR (20),
+  title  varchar(30),
+  birth_date TIMESTAMP
+
+  )as
+$$
+
+  select id, last_name, first_name, title, birth_date
+  from employees where birth_date > '1968-01-01 00:00:00';
+
+$$
+language sql;
+
+select born_after_1968();
+4 Stored Procedures	
+•	NA
+5 Transactions
+In this section you will be working with transactions. Transactions are usually nested within a stored procedure.
+•	Task – Create a transaction that given a invoiceId will delete that invoice (There may be constraints that rely on this, find out how to resolve them).
+•	Task – Create a transaction nested within a stored procedure that inserts a new record in the Customer table
+6 Triggers
+In this section you will create various kinds of triggers that work when certain DML statements are executed on a table.
+6.1 AFTER/FOR
+•	Task - Create an after insert trigger on the employee table fired after a new record is inserted into the table.
+create function log_new_employees()
+  returns trigger as
+$$
+begin
+  raise notice 'You inserted a new employee!';
+  return NEW;
+end;
+$$
+language plpgsql;
+
+CREATE TRIGGER employee_insertion
+AFTER INSERT
+  ON employees
+FOR EACH ROW
+EXECUTE PROCEDURE log_new_employees();
+
+INSERT INTO employees
+(id, last_name, first_name, title, reports_to, birth_date, hire_date, address, city, state, country, postal_code, phone, fax, email)
+VALUES (124,'howell','aleks','manager',6,NULL,NULL ,NULL ,NULL ,NULL,NULL, NULL, NULL, NULL, NULL)
+
+•	Task – Create an after update trigger on the album table that fires after a row is inserted in the table
+create function updating()
+returns trigger as
+$$
+begin
+raise notice 'You  updated a record!';
+return NEW;
+end;
+$$
+language plpgsql;
+
+CREATE TRIGGER update_row
+AFTER UPDATE
+  ON albums
+FOR EACH ROW
+EXECUTE PROCEDURE updating();
+
+update albums
+set title='For Those'
+where id=1
+;
+
+•	Task – Create an after delete trigger on the customer table that fires after a row is deleted from the table.
+
+create function deleting()
+returns trigger as
+$$
+begin
+raise notice 'You deleted a record! Uh-oh!';
+return NEW;
+end;
+$$
+language plpgsql;
+
+CREATE TRIGGER delete_row
+AFTER DELETE
+  ON customers
+FOR EACH ROW
+EXECUTE PROCEDURE deleting();
+
+DELETE FROM customers WHERE id = 60;
+
+7 Joins
+In this section you will be working with combing various tables through the use of joins. You will work with outer, inner, right, left, cross, and self joins.
+7.1 INNER
+•	Task – Create an inner join that joins customers and orders and specifies the name of the customer and the invoiceId.
+select a.first_name, a.last_name, b.invoice_date, b.id
+from customers as a
+join invoices as b
+  on a.id=b.customer_id
+and b.id=1
+;
+
+7.2 OUTER
+•	Task – Create an outer join that joins the customer and invoice table, specifying the CustomerId, firstname, lastname, invoiceId, and total.
+select 
+  a.id,
+  a.first_name,
+  a.last_name,
+  b.id,
+  b.total
+From customers a 
+full outer join invoices b 
+on a.id = b.customer_id;
+
+7.3 RIGHT
+•	Task – Create a right join that joins album and artist specifying artist name and title.
+select
+  a.title, b.name
+From albums a
+RIGHT JOIN artists b
+on a.artist_id=b.id
+
+7.4 CROSS
+•	Task – Create a cross join that joins album and artist and sorts by artist name in ascending order.
+select 
+  a.name, 
+  b.title
+from artists a 
+CROSS JOIN albums b
+order by a.name;
+
+7.5 SELF
+•	Task – Perform a self-join on the employee table, joining on the reportsto column.
+select
+  a.last_name as employee,
+  b.last_name as manager
+from employees a
+join employees b
+on a.reports_to = b.id
+;
+
+
